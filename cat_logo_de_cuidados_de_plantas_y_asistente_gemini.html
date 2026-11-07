@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de Cuidados de Plantas - GreenCare</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+        // Aplicar tema antes de pintar para evitar parpadeo
+        (function () {
+            let saved = null;
+            try { saved = localStorage.getItem('theme'); } catch (e) {}
+            const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.toggle('dark', dark);
+        })();
+    </script>
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar para el chat */
+        .chat-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: #10b981;
+            border-radius: 4px;
+        }
+        .dark .chat-scroll::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+    </style>
+</head>
+<body class="bg-emerald-50/40 dark:bg-slate-950 text-slate-800 dark:text-slate-200 transition-colors min-h-screen flex flex-col relative">
+
+    <!-- Header y Buscador -->
+    <header class="bg-gradient-to-r from-emerald-800 to-teal-700 dark:from-emerald-950 dark:to-teal-900 text-white shadow-lg py-8 px-4 sm:px-6 mb-8 relative">
+        <button id="themeToggleBtn" title="Cambiar modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-300">
+            <i id="themeIcon" class="fa-solid fa-moon"></i>
+        </button>
+        <div class="max-w-5xl mx-auto text-center">
+            <div class="inline-flex items-center justify-center bg-emerald-700/60 p-3 rounded-full mb-3 shadow-inner">
+                <i class="fa-solid fa-seedling text-3xl text-emerald-300"></i>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Cuida tus Plantas</h1>
+            <p class="text-emerald-100 max-w-xl mx-auto text-sm sm:text-base mb-6">
+                Guía interactiva para mantener tus plantas sanas, verdes y radiantes.
+            </p>
+            
+            <!-- Buscador en tiempo real -->
+            <div class="max-w-md mx-auto relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-emerald-500">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Busca por nombre (ej. Monstera, Potos)..." 
+                    class="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all text-sm sm:text-base"
+                >
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal / Catálogo -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 flex-grow w-full mb-20">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-emerald-900 dark:text-emerald-300 border-l-4 border-emerald-600 pl-3">Catálogo de Plantas</h2>
+            <span id="plantCount" class="text-xs sm:text-sm font-medium bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-3 py-1 rounded-full">Mostrando 9 plantas</span>
+        </div>
+
+        <!-- Grid de Plantas -->
+        <div id="plantGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <!-- Las tarjetas se generan dinámicamente mediante JavaScript -->
+        </div>
+
+        <!-- Mensaje de no resultados -->
+        <div id="noResults" class="hidden text-center py-16 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-emerald-100 dark:border-slate-800 mt-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-full mb-3">
+                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-200">No se encontraron plantas</h3>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Prueba buscando con otro nombre o categoría.</p>
+        </div>
+    </main>
+
+    <!-- Sección Ubicación / Google Maps -->
+    <section id="ubicacion" class="max-w-6xl mx-auto px-4 sm:px-6 w-full mb-16">
+        <h2 class="text-xl font-bold text-emerald-900 dark:text-emerald-300 border-l-4 border-emerald-600 pl-3 mb-6">Visítanos</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-emerald-100 dark:border-slate-800 overflow-hidden">
+            <div class="lg:col-span-2 h-72 sm:h-80 lg:h-full min-h-[18rem] bg-slate-100 dark:bg-slate-800">
+                <iframe id="mapFrame" title="Mapa de ubicación" class="w-full h-full border-0" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+            </div>
+            <div class="p-6 flex flex-col justify-center space-y-4 text-sm">
+                <p class="flex items-start"><i class="fa-solid fa-location-dot text-emerald-600 dark:text-emerald-400 w-5 mt-0.5 mr-2"></i><span id="contactAddress" class="text-slate-700 dark:text-slate-200"></span></p>
+                <p class="flex items-start"><i class="fa-solid fa-clock text-emerald-600 dark:text-emerald-400 w-5 mt-0.5 mr-2"></i><span id="contactHours" class="text-slate-700 dark:text-slate-200"></span></p>
+                <p class="flex items-start"><i class="fa-solid fa-phone text-emerald-600 dark:text-emerald-400 w-5 mt-0.5 mr-2"></i><span id="contactPhone" class="text-slate-700 dark:text-slate-200"></span></p>
+                <div class="flex flex-wrap gap-2 pt-2">
+                    <a id="directionsBtn" href="#" target="_blank" rel="noopener" class="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl transition-colors shadow-sm">
+                        <i class="fa-solid fa-diamond-turn-right mr-2"></i> Cómo llegar
+                    </a>
+                    <a id="whatsappInlineBtn" href="#" target="_blank" rel="noopener" class="inline-flex items-center bg-[#25D366] hover:bg-[#1ebe5b] text-white font-medium px-4 py-2.5 rounded-xl transition-colors shadow-sm">
+                        <i class="fa-brands fa-whatsapp mr-2 text-base"></i> Escríbenos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Botón flotante de WhatsApp (esquina inferior izquierda) -->
+    <a id="whatsappFloatBtn" href="#" target="_blank" rel="noopener" title="Escríbenos por WhatsApp" aria-label="Escríbenos por WhatsApp" class="fixed bottom-5 left-5 z-40 bg-[#25D366] hover:bg-[#1ebe5b] text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-3xl transition-transform duration-300 hover:scale-105 active:scale-95 border-2 border-white dark:border-slate-800">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-900 border-t border-emerald-100 dark:border-slate-800 py-6 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        <p>GreenCare Guide &copy; 2026 — Soluciones Digitales para Agencias Web.</p>
+        <details class="mt-2 text-[11px] max-w-3xl mx-auto px-4">
+            <summary class="cursor-pointer hover:text-emerald-700 dark:hover:text-emerald-400">Créditos de las fotografías</summary>
+            <p class="mt-2 leading-relaxed">
+                Monstera: Unsplash ·
+                Sansevieria: DenesFeri (CC BY-SA 4.0) ·
+                Potos: Mokkie (CC BY-SA 3.0) ·
+                Echeveria: Zeynel Cebeci (CC BY-SA 4.0) ·
+                Helecho de Boston: Nathaly 1106 (CC0) ·
+                Ficus Lyrata: Forest &amp; Kim Starr (CC BY 3.0) ·
+                Calathea: David J. Stang (CC BY-SA 4.0) ·
+                Cactus de Navidad: Agnes Monkelbaan (CC BY-SA 4.0) ·
+                Anturio: ImagePerson (CC BY 4.0) —
+                vía <a href="https://commons.wikimedia.org" target="_blank" rel="noopener" class="underline">Wikimedia Commons</a>.
+            </p>
+        </details>
+    </footer>
+
+    <!-- WIDGET FLOTANTE COMPACTO DE GEMINI AI (Esquina inferior derecha) -->
+    <div class="fixed bottom-5 right-5 z-40 flex flex-col items-end">
+        
+        <!-- Ventana desplegable del Chat (Oculta por defecto) -->
+        <div id="chatWindow" class="hidden w-[90vw] sm:w-80 md:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-emerald-100 dark:border-slate-700 overflow-hidden mb-3 transform transition-all duration-300 origin-bottom-right">
+            <!-- Header del Chat -->
+            <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white p-3.5 flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-xs text-emerald-200 border border-emerald-400">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm leading-tight">Asistente Botánico Gemini</h3>
+                        <p class="text-[10px] text-emerald-200">IA experta en salud vegetal</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1">
+                    <button id="toggleConfigBtn" title="Configurar API Key" class="text-emerald-200 hover:text-white p-1.5 rounded-lg text-xs transition-colors">
+                        <i class="fa-solid fa-key"></i>
+                    </button>
+                    <button id="closeChatBtn" title="Cerrar chat" class="text-emerald-200 hover:text-white p-1.5 rounded-lg text-xs transition-colors">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel Ocultable de API Key -->
+            <div id="configPanel" class="hidden bg-slate-900 text-white p-3 text-xs border-b border-slate-700">
+                <label class="block text-[11px] text-emerald-400 font-medium mb-1">API Key de Gemini:</label>
+                <div class="flex space-x-2">
+                    <input type="password" id="apiKeyInput" placeholder="Pega tu API Key..." class="flex-grow px-2 py-1 bg-slate-800 text-white text-xs rounded border border-slate-700 focus:outline-none focus:border-emerald-500">
+                    <button id="saveApiKeyBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded font-medium text-[11px]">Guardar</button>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">Si la dejas vacía, usará la clave predeterminada del entorno.</p>
+            </div>
+
+            <!-- Area de Mensajes -->
+            <div id="chatMessages" class="chat-scroll h-72 p-3 overflow-y-auto space-y-2.5 bg-slate-50 dark:bg-slate-950 text-xs">
+                <div class="flex items-start space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">
+                        <i class="fa-solid fa-leaf"></i>
+                    </div>
+                    <div class="bg-emerald-100/80 dark:bg-emerald-900/50 text-emerald-950 dark:text-emerald-50 p-2.5 rounded-xl rounded-tl-none max-w-[85%] leading-relaxed">
+                        ¡Hola! ¿Tienes alguna consulta rápida sobre hojas amarillas, exceso de riego o abonos? Pregúntame lo que necesites.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input del Chat -->
+            <div class="p-2 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 flex items-center space-x-1.5">
+                <input 
+                    type="text" 
+                    id="chatInput" 
+                    placeholder="Escribe tu duda vegetal..." 
+                    class="flex-grow px-3 py-2 bg-slate-100 dark:bg-slate-800 dark:text-slate-100 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-700 transition-all"
+                >
+                <button 
+                    id="sendChatBtn" 
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors shadow-sm flex-shrink-0"
+                >
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Botón Flotante Circular para Abrir/Cerrar el Chat -->
+        <button id="openChatBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl transition-all duration-300 transform hover:scale-105 active:scale-95 border-2 border-white dark:border-slate-800 focus:outline-none group">
+            <i class="fa-solid fa-comments group-hover:rotate-12 transition-transform"></i>
+            <span class="absolute -top-1 -right-1 flex h-4 w-4">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 text-[9px] font-bold text-white items-center justify-center">1</span>
+            </span>
+        </button>
+    </div>
+
+    <!-- Modal de Detalles de la Planta -->
+    <div id="plantModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div id="modalContent" class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden transform scale-95 transition-transform duration-300 max-h-[90vh] flex flex-col">
+            <!-- Header del Modal con Imagen -->
+            <div class="relative h-56 sm:h-64 w-full bg-slate-100 dark:bg-slate-800">
+                <img id="modalImage" src="" alt="Planta" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400/10b981/ffffff?text=Planta'">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent"></div>
+                <button id="closeModalBtn" class="absolute top-4 right-4 bg-white/80 hover:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 rounded-full shadow-md transition-colors focus:outline-none">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+                <div class="absolute bottom-4 left-6 right-6 text-white">
+                    <span id="modalCategory" class="inline-block bg-emerald-600/90 text-xs uppercase tracking-wider font-semibold px-2.5 py-1 rounded-md mb-1">Interior</span>
+                    <h3 id="modalTitle" class="text-2xl sm:text-3xl font-bold">Nombre de Planta</h3>
+                </div>
+            </div>
+
+            <!-- Cuerpo del Modal con Información Detallada -->
+            <div class="p-6 sm:p-8 overflow-y-auto space-y-6">
+                <!-- Tarjetas rápidas (Riego y Luz) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-emerald-50/80 dark:bg-emerald-950/50 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900 flex items-start space-x-3">
+                        <div class="bg-emerald-600 text-white p-2.5 rounded-xl mt-0.5">
+                            <i class="fa-solid fa-droplet"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold uppercase text-emerald-800 dark:text-emerald-300 tracking-wide block">Riego</span>
+                            <p id="modalWater" class="text-sm font-medium text-slate-700 dark:text-slate-200 mt-0.5">Frecuencia de riego...</p>
+                        </div>
+                    </div>
+                    <div class="bg-amber-50/80 dark:bg-amber-950/40 p-4 rounded-2xl border border-amber-100 dark:border-amber-900 flex items-start space-x-3">
+                        <div class="bg-amber-500 text-white p-2.5 rounded-xl mt-0.5">
+                            <i class="fa-solid fa-sun"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold uppercase text-amber-800 dark:text-amber-300 tracking-wide block">Iluminación</span>
+                            <p id="modalLight" class="text-sm font-medium text-slate-700 dark:text-slate-200 mt-0.5">Requerimientos de luz...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de Consejos / Cuidados Específicos -->
+                <div>
+                    <h4 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center mb-3">
+                        <i class="fa-solid fa-shield-heart text-emerald-600 mr-2"></i> Consejos para que no se seque
+                    </h4>
+                    <div class="bg-slate-50 dark:bg-slate-800/60 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <p id="modalCare" class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-line">Detalles completos de cuidado...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer del Modal -->
+            <div class="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                <button id="closeModalBtnFooter" class="bg-slate-800 hover:bg-slate-900 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-medium px-5 py-2.5 rounded-xl transition-colors text-sm shadow-sm">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Lógica de la Aplicación -->
+    <script>
+        // ============================================================
+        // DATOS DE CONTACTO — DATOS DE EJEMPLO, CÁMBIALOS POR LOS REALES
+        // ============================================================
+        const CONTACTO = {
+            // Número con lada de país, solo dígitos (52 = México). Ejemplo ficticio:
+            whatsapp: "5215500000000",
+            mensajeWhatsapp: "Hola, vi su catálogo de plantas y me gustaría recibir información.",
+            // Dirección o nombre del lugar tal como aparece en Google Maps
+            direccion: "Viveros de Coyoacán, Ciudad de México",
+            horario: "Lunes a sábado, 9:00 a 18:00",
+            telefono: "55 0000 0000"
+        };
+
+        (function aplicarContacto() {
+            const waUrl = `https://wa.me/${CONTACTO.whatsapp}?text=${encodeURIComponent(CONTACTO.mensajeWhatsapp)}`;
+            const lugar = encodeURIComponent(CONTACTO.direccion);
+            document.getElementById('whatsappFloatBtn').href = waUrl;
+            document.getElementById('whatsappInlineBtn').href = waUrl;
+            document.getElementById('mapFrame').src = `https://www.google.com/maps?q=${lugar}&output=embed`;
+            document.getElementById('directionsBtn').href = `https://www.google.com/maps/dir/?api=1&destination=${lugar}`;
+            document.getElementById('contactAddress').textContent = CONTACTO.direccion;
+            document.getElementById('contactHours').textContent = CONTACTO.horario;
+            document.getElementById('contactPhone').textContent = CONTACTO.telefono;
+        })();
+
+        // Base de datos completa con 9 plantas (fotos locales en la carpeta img/)
+        const plantsData = [
+            {
+                id: 1,
+                name: "Monstera Deliciosa",
+                category: "Interior / Tropical",
+                image: "img/monstera.jpg",
+                water: "Cada 7-10 días (dejar secar los primeros 3 cm de tierra).",
+                light: "Luz indirecta brillante. Evita el sol directo intenso.",
+                care: "• Limpia sus hojas con un paño húmedo para facilitar la fotosíntesis.\n• Pulveriza agua alrededor si el ambiente es seco.\n• Evita el encharcamiento para proteger las raíces."
+            },
+            {
+                id: 2,
+                name: "Sansevieria (Lengua de Suegra)",
+                category: "Resistente / Interior",
+                image: "img/sansevieria.jpg",
+                water: "Cada 2-3 semanas. Alta tolerancia a la sequía.",
+                light: "Se adapta desde poca luz hasta sol directo moderado.",
+                care: "• Es ideal para principiantes por su enorme resistencia.\n• El mayor riesgo es el exceso de agua.\n• Asegúrate de que la maceta drene muy bien."
+            },
+            {
+                id: 3,
+                name: "Potos (Epipremnum aureum)",
+                category: "Colgante / Interior",
+                image: "img/potos.jpg",
+                water: "Cada 7-10 días cuando el suelo pierda humedad.",
+                light: "Luz indirecta moderada.",
+                care: "• Si las hojas se ven lánguidas, es aviso inmediato de riego.\n• Poda las puntas para conseguir un aspecto más frondoso.\n• Muy fácil de multiplicar en agua."
+            },
+            {
+                id: 4,
+                name: "Suculenta Echeveria",
+                category: "Crasa / Sol",
+                image: "img/echeveria.jpg",
+                water: "Cada 12-15 días. Esperar a que el sustrato seque totalmente.",
+                light: "Sol directo de 4 a 6 horas diarias.",
+                care: "• Riega directo en la tierra, no sobre el centro de la roseta.\n• Requiere sustrato especial para cactus con excelente drenaje.\n• Evita acumulación de humedad en invierno."
+            },
+            {
+                id: 5,
+                name: "Helecho de Boston",
+                category: "Húmeda / Sombra",
+                image: "img/helecho-boston.jpg",
+                water: "Cada 4-5 días. Mantener tierra ligeramente húmeda.",
+                light: "Luz indirecta suave. Nunca sol directo.",
+                care: "• Le fascina la humedad: pulveriza a diario.\n• Si las puntas se secan, incrementa la humedad ambiental.\n• Ubícalo en baños o cocinas con buena iluminación."
+            },
+            {
+                id: 6,
+                name: "Ficus Lyrata",
+                category: "Árbol de Interior",
+                image: "img/ficus-lyrata.jpg",
+                water: "Cada 7-10 días al secarse la capa superior.",
+                light: "Luz brillante e indirecta cerca de una ventana.",
+                care: "• Sensible a las corrientes de aire helado.\n• Gira la maceta una vez al mes para un crecimiento parejo.\n• Limpia el polvo de sus hojas anchas constantemente."
+            },
+            {
+                id: 7,
+                name: "Calathea Medallion",
+                category: "Tropical / Decora",
+                image: "img/calathea.jpg",
+                water: "Cada 5-7 días con agua filtrada.",
+                light: "Sombra parcial / Luz indirecta suave.",
+                care: "• Evita agua con alto contenido de cloro.\n• Mantén un entorno húmedo continuo.\n• Sus hojas se pliegan de noche de forma natural."
+            },
+            {
+                id: 8,
+                name: "Cactus de Navidad",
+                category: "Floreciente / Crasa",
+                image: "img/cactus-navidad.jpg",
+                water: "Cada 10-12 días de forma moderada.",
+                light: "Luz brillante sin sol abrasador.",
+                care: "• A diferencia de otros cactus, aprecia cierta humedad.\n• No mover de lugar durante la formación de botones florales.\n• Fertilizar ligeramente en primavera."
+            },
+            {
+                id: 9,
+                name: "Anturio (Anthurium)",
+                category: "Flor / Interior",
+                image: "img/anturio.jpg",
+                water: "Cada 6-8 días en época cálida.",
+                light: "Luz indirecta intensa para florecer.",
+                care: "• Mantén temperaturas superiores a 18°C.\n• Pulveriza sus hojas sin mojar excesivamente la flor.\n• Flores muy duraderas si recibe luz adecuada."
+            }
+        ];
+
+        // Elementos del DOM
+        const plantGrid = document.getElementById('plantGrid');
+        const searchInput = document.getElementById('searchInput');
+        const noResults = document.getElementById('noResults');
+        const plantCount = document.getElementById('plantCount');
+        
+        // Modal elementos
+        const plantModal = document.getElementById('plantModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeModalBtnFooter = document.getElementById('closeModalBtnFooter');
+        const modalImage = document.getElementById('modalImage');
+        const modalCategory = document.getElementById('modalCategory');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalWater = document.getElementById('modalWater');
+        const modalLight = document.getElementById('modalLight');
+        const modalCare = document.getElementById('modalCare');
+
+        // Renderizar Plantas
+        function renderPlants(plants) {
+            plantGrid.innerHTML = '';
+            if (plants.length === 0) {
+                noResults.classList.remove('hidden');
+                plantCount.textContent = `Mostrando 0 plantas`;
+                return;
+            }
+
+            noResults.classList.add('hidden');
+            plantCount.textContent = `Mostrando ${plants.length} ${plants.length === 1 ? 'planta' : 'plantas'}`;
+
+            plants.forEach(plant => {
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-emerald-100 dark:border-slate-800 overflow-hidden flex flex-col cursor-pointer group transform hover:-translate-y-1";
+                card.onclick = () => openModal(plant);
+
+                card.innerHTML = `
+                    <div class="relative h-48 sm:h-52 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                        <img src="${plant.image}" alt="${plant.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/10b981/ffffff?text=Planta'">
+                        <span class="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/85 backdrop-blur-sm text-emerald-800 dark:text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+                            ${plant.category}
+                        </span>
+                    </div>
+                    <div class="p-5 flex flex-col flex-grow justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors mb-2">${plant.name}</h3>
+                            <div class="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 mb-4">
+                                <p class="flex items-center"><i class="fa-solid fa-droplet text-emerald-600 w-4 mr-2"></i> <span class="line-clamp-1">${plant.water}</span></p>
+                                <p class="flex items-center"><i class="fa-solid fa-sun text-amber-500 w-4 mr-2"></i> <span class="line-clamp-1">${plant.light}</span></p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-emerald-700 dark:text-emerald-400 group-hover:text-emerald-800 dark:group-hover:text-emerald-300">
+                            <span>Ver cuidados completos</span>
+                            <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+                `;
+                plantGrid.appendChild(card);
+            });
+        }
+
+        // Lógica Modal
+        function openModal(plant) {
+            modalImage.src = plant.image;
+            modalCategory.textContent = plant.category;
+            modalTitle.textContent = plant.name;
+            modalWater.textContent = plant.water;
+            modalLight.textContent = plant.light;
+            modalCare.textContent = plant.care;
+
+            plantModal.classList.remove('hidden');
+            setTimeout(() => {
+                plantModal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            plantModal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                plantModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        closeModalBtn.onclick = closeModal;
+        closeModalBtnFooter.onclick = closeModal;
+        plantModal.onclick = (e) => { if (e.target === plantModal) closeModal(); };
+
+        // Buscador
+        searchInput.oninput = (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const filtered = plantsData.filter(plant => 
+                plant.name.toLowerCase().includes(query) || 
+                plant.category.toLowerCase().includes(query)
+            );
+            renderPlants(filtered);
+        };
+
+        // --- MODO OSCURO ---
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeIcon = document.getElementById('themeIcon');
+        function updateThemeIcon() {
+            const isDark = document.documentElement.classList.contains('dark');
+            themeIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+        themeToggleBtn.onclick = () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+            updateThemeIcon();
+        };
+        updateThemeIcon();
+
+        // --- LÓGICA DEL WIDGET FLOTANTE DE GEMINI AI ---
+        const openChatBtn = document.getElementById('openChatBtn');
+        const closeChatBtn = document.getElementById('closeChatBtn');
+        const chatWindow = document.getElementById('chatWindow');
+        const toggleConfigBtn = document.getElementById('toggleConfigBtn');
+        const configPanel = document.getElementById('configPanel');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+        
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendChatBtn = document.getElementById('sendChatBtn');
+
+        // Cargar API Key guardada en localStorage si existe
+        const savedApiKey = localStorage.getItem('gemini_api_key');
+        if (savedApiKey) {
+            apiKeyInput.value = savedApiKey;
+        }
+
+        // Mostrar / Ocultar ventana flotante
+        openChatBtn.onclick = () => {
+            chatWindow.classList.toggle('hidden');
+            if (!chatWindow.classList.contains('hidden')) {
+                chatInput.focus();
+            }
+        };
+
+        closeChatBtn.onclick = () => {
+            chatWindow.classList.add('hidden');
+        };
+
+        toggleConfigBtn.onclick = () => {
+            configPanel.classList.toggle('hidden');
+        };
+
+        saveApiKeyBtn.onclick = () => {
+            const key = apiKeyInput.value.trim();
+            if (key) {
+                localStorage.setItem('gemini_api_key', key);
+                alert("API Key guardada localmente.");
+            } else {
+                localStorage.removeItem('gemini_api_key');
+                alert("Usando la API Key predeterminada.");
+            }
+            configPanel.classList.add('hidden');
+        };
+
+        // Conversación con Gemini
+        let chatHistory = [];
+
+        async function handleSendMessage() {
+            const userText = chatInput.value.trim();
+            if (!userText) return;
+
+            // Renderizar mensaje usuario
+            appendMessage(userText, 'user');
+            chatInput.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Mostrar estado cargando
+            const loadingId = appendLoadingMessage();
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            const apiKeyToUse = apiKeyInput.value.trim() || "";
+            // gemini-2.5-flash ya pasó su fecha de retiro (junio 2026); se prueba primero el alias vigente
+            const modelsToTry = ["gemini-flash-latest", "gemini-2.5-flash"];
+            const buildUrl = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKeyToUse)}`;
+
+            chatHistory.push({ role: "user", parts: [{ text: userText }] });
+
+            const payload = {
+                contents: chatHistory,
+                systemInstruction: {
+                    parts: [{ text: "Eres un asistente botánico experto y muy conciso. Responde en 2 o 3 oraciones cortas con consejos prácticos para el cuidado de plantas de casa." }]
+                }
+            };
+
+            try {
+                let response = null;
+                for (const model of modelsToTry) {
+                    let delay = 1000;
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                        try {
+                            response = await fetch(buildUrl(model), {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            // Solo reintentar en errores temporales (429 / 5xx)
+                            if (response.ok || (response.status < 500 && response.status !== 429)) break;
+                        } catch (err) {
+                            if (attempt === 2) throw err;
+                        }
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    }
+                    // Si el modelo no existe (404), probar el siguiente
+                    if (!response || response.status !== 404) break;
+                }
+
+                removeLoadingMessage(loadingId);
+
+                if (response && response.ok) {
+                    const result = await response.json();
+                    const aiReply = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (aiReply) {
+                        appendMessage(aiReply, 'model');
+                        chatHistory.push({ role: "model", parts: [{ text: aiReply }] });
+                    } else {
+                        appendMessage("No pude obtener respuesta. Intenta de nuevo.", 'model');
+                    }
+                } else {
+                    let detail = "";
+                    try { detail = (await response.json())?.error?.message || ""; } catch (e) {}
+                    console.error("Gemini API error", response?.status, detail);
+                    appendMessage(`Error ${response?.status ?? ""} de la API: ${detail || "sin detalle"}`, 'model');
+                }
+            } catch (err) {
+                removeLoadingMessage(loadingId);
+                console.error("Gemini fetch error", err);
+                appendMessage(`No se pudo conectar con Gemini (${err.message}). Si abriste el archivo con doble clic, prueba servirlo con un servidor local.`, 'model');
+            }
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function appendMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `flex items-start space-x-2 ${sender === 'user' ? 'justify-end' : ''}`;
+
+            if (sender === 'model') {
+                div.innerHTML = `
+                    <div class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">
+                        <i class="fa-solid fa-leaf"></i>
+                    </div>
+                    <div class="bg-emerald-100/90 dark:bg-emerald-900/50 text-emerald-950 dark:text-emerald-50 p-2.5 rounded-xl rounded-tl-none max-w-[85%] leading-relaxed">
+                        ${escapeHTML(text)}
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <div class="bg-slate-800 dark:bg-emerald-700 text-white p-2.5 rounded-xl rounded-tr-none max-w-[85%] leading-relaxed">
+                        ${escapeHTML(text)}
+                    </div>
+                `;
+            }
+            chatMessages.appendChild(div);
+        }
+
+        function appendLoadingMessage() {
+            const id = 'loading-' + Date.now();
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = "flex items-start space-x-2";
+            div.innerHTML = `
+                <div class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">
+                    <i class="fa-solid fa-leaf"></i>
+                </div>
+                <div class="bg-slate-100 text-slate-500 p-2 rounded-xl rounded-tl-none text-[11px] flex items-center space-x-1.5">
+                    <i class="fa-solid fa-circle-notch fa-spin text-emerald-600"></i>
+                    <span>Consultando...</span>
+                </div>
+            `;
+            chatMessages.appendChild(div);
+            return id;
+        }
+
+        function removeLoadingMessage(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        sendChatBtn.onclick = handleSendMessage;
+        chatInput.onkeydown = (e) => {
+            if (e.key === 'Enter') handleSendMessage();
+        };
+
+        window.onload = () => {
+            renderPlants(plantsData);
+        };
+    </script>
+</body>
+</html>
